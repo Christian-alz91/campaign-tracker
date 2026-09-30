@@ -1,0 +1,75 @@
+{
+  "accounts": {
+    "act_221102009556311": "Alzheimerforeningen - Kommunikation",
+    "act_404414994142185": "Alzheimerforeningen - Fundraising (Ad Hoc)",
+    "act_193703660044031": "ALZ - Demenslinien",
+    "act_1299103077621182": "ALZ - Aktivitetsvenner",
+    "act_167327199135047": "ALZ - Hjernesund",
+    "act_1238401260435739": "ALZ - Arv",
+    "act_228682732985059": "ALZ - Landsindsamling",
+    "act_1924397704566094": "ALZ - Demensven",
+    "act_204267348913931": "ALZ - Digitale Demensfællesskaber",
+    "act_1479302129327304": "ALZ - Aktiviteter og Tilbud"
+  },
+  "accountShort": {
+    "Alzheimerforeningen - Kommunikation": "Kommunikation",
+    "Alzheimerforeningen - Fundraising (Ad Hoc)": "Fundraising",
+    "ALZ - Demenslinien": "Demenslinien",
+    "ALZ - Aktivitetsvenner": "Aktivitetsvenner",
+    "ALZ - Hjernesund": "Hjernesund",
+    "ALZ - Arv": "Arv",
+    "ALZ - Landsindsamling": "Landsindsamling",
+    "ALZ - Demensven": "Demensven",
+    "ALZ - Digitale Demensfællesskaber": "Digitale Demensfællesskaber",
+    "ALZ - Aktiviteter og Tilbud": "Aktiviteter og Tilbud"
+  },
+  "categories": [
+    {"id": "frivillige", "label": "Frivillige og koordinatorer"},
+    {"id": "deltagere", "label": "Deltagere og rådgivning"},
+    {"id": "leads", "label": "Leads til fundraising"},
+    {"id": "indsamling", "label": "Landsindsamling"},
+    {"id": "arv", "label": "Arv og testamente"},
+    {"id": "ovrige", "label": "Øvrige (ikke placeret endnu)"}
+  ],
+  "initiatives": [
+    {"id": "demf-frivillige", "name": "Demensfællesskaber – frivillige", "cat": "frivillige"},
+    {"id": "lf-frivillige", "name": "Lokalforeninger – frivillige", "cat": "frivillige"},
+    {"id": "gruppekoord", "name": "Gruppekoordinatorer", "cat": "frivillige"},
+    {"id": "demf-deltagere", "name": "Demensfællesskaber – deltagere", "cat": "deltagere"},
+    {"id": "demenslinien", "name": "Demenslinien", "cat": "deltagere"},
+    {"id": "demenspanelet", "name": "Demenspanelet", "cat": "deltagere"},
+    {"id": "god-ferie", "name": "God ferie med demens", "cat": "leads"},
+    {"id": "moerke-dage", "name": "Mørke dage + Mytequiz", "cat": "leads"},
+    {"id": "li26", "name": "Landsindsamling 2026", "cat": "indsamling"},
+    {"id": "testamente", "name": "Testamenteguide", "cat": "arv"}
+  ],
+  "byCampaignId": {
+    "120248535285640761": "demf-frivillige", "120248922885290761": "demf-frivillige", "120249176014500761": "demf-frivillige",
+    "120249201443500761": "demf-frivillige", "120250283458640761": "demf-frivillige", "120250297579940761": "demf-frivillige",
+    "120250357216970761": "demf-frivillige", "120250421353670761": "demf-frivillige", "120250602240300761": "demf-frivillige",
+    "120250298525570761": "lf-frivillige", "120250358871920761": "lf-frivillige",
+    "120250564807030761": "gruppekoord", "120250718497560761": "gruppekoord",
+    "120250450942590761": "demf-deltagere", "120250453934540761": "demf-deltagere", "120250497649210761": "demf-deltagere",
+    "120242778360810146": "demenslinien", "120245177053820146": "demenslinien",
+    "120248181896750761": "demenspanelet",
+    "120254718292460196": "god-ferie", "120256455380170196": "god-ferie", "120256569898490196": "god-ferie",
+    "120256866997380196": "moerke-dage", "120257001634860196": "moerke-dage",
+    "120247985419090719": "li26", "120249021325810719": "li26", "120249053722960719": "li26", "120249427775500719": "li26",
+    "120249428643790719": "li26", "120249506319180719": "li26", "120249506331950719": "li26",
+    "120248485401670780": "testamente"
+  },
+  "rules": [
+    {"nameAny": ["gruppekoordinator", "gruppeleder"], "initiative": "gruppekoord"},
+    {"nameAll": ["demensfællesskab", "deltager"], "initiative": "demf-deltagere"},
+    {"nameAny": ["demensfællesskab"], "initiative": "demf-frivillige"},
+    {"nameAny": ["lf ", "lokalforening"], "nameAlso": ["frivillig"], "initiative": "lf-frivillige"},
+    {"nameAny": ["demenspanel"], "initiative": "demenspanelet"},
+    {"nameAny": ["god ferie"], "initiative": "god-ferie"},
+    {"nameAny": ["mørke dage", "mytequiz"], "initiative": "moerke-dage"},
+    {"nameAny": ["li26"], "initiative": "li26"},
+    {"account": "ALZ - Landsindsamling", "yearInitiative": {"idPrefix": "li", "namePrefix": "Landsindsamling ", "cat": "indsamling"}},
+    {"account": "ALZ - Demenslinien", "initiative": "demenslinien"},
+    {"nameAny": ["testamente", "arv"], "initiative": "testamente"},
+    {"account": "ALZ - Arv", "initiative": "testamente"}
+  ]
+}

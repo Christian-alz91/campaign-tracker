@@ -198,7 +198,7 @@ tfoot td{font-weight:600;border-bottom:0}
     <div class="sec-head"><h2 id="h-tbl">Nøgletal pr. initiativ</h2><p>Siden 1. juli. Klik på en kolonneoverskrift for at sortere. Klik på et initiativ for at se de enkelte kampagner. <button type="button" class="ghost" id="tbl-reset" hidden>Gruppér efter formål igen</button></p></div>
     <div class="tbl-box"><table id="tbl"></table></div>
   </section>
-  <section aria-labelledby="h-plan">
+  <section aria-labelledby="h-plan" id="plan-section" hidden>
     <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Kampagner, der lige er sat i gang, også på andre platforme end Meta. De vises med det samme i overblikket, indtil tallene fra Meta kommer ind.</p></div>
     <div class="plan-grid">
       <div class="plan-list" id="plan-list"><div class="empty">Henter kampagner …</div></div>
@@ -527,6 +527,7 @@ async function loadEntries(){
   entries = (j.entries||[]).filter(p=>p.start && (p.end || p.ongoing) && CAT[p.cat]);
   canWrite = j.canEdit === true;
   form.hidden = !canWrite;
+  $('plan-section').hidden = !canWrite; // kun redaktører ser afsnittet; andre ser nye kampagner på tidslinjen og under "Kører lige nu"
   renderPlan('ok'); renderAll();
 }
 

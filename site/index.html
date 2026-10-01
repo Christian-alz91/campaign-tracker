@@ -259,7 +259,7 @@ let canWrite = false;
 const asT = new Date(toT(D.asOf));
 $('asof').textContent = asT.getUTCDate()+'. '+MONTHS_L[asT.getUTCMonth()]+' '+asT.getUTCFullYear();
 function sumDaily(filter){ let s=0; INIT.forEach(i=>Object.entries(i.daily).forEach(([d,v])=>{ if(filter(d)) s+=v; })); return s; }
-{ const mo=D.asOf.slice(0,7); $('k-month-lbl').textContent='Forbrug i '+MONTHS_L[Number(mo.slice(5,7))-1]; $('k-sep').textContent = kr(sumDaily(d=>d.startsWith(mo))); }
+{ const end=toT(D.asOf), from=new Date(end-29*DAY).toISOString().slice(0,10); $('k-month-lbl').textContent='Forbrug seneste 30 dage'; $('k-sep').textContent = kr(sumDaily(d=>d>=from && d<=D.asOf)); }
 $('k-tot').textContent = kr(INIT.reduce((a,i)=>a+i.cost,0));
 $('k-leads').textContent = nf(INIT.reduce((a,i)=>a+(i.leads||0),0));
 function renderLive(){

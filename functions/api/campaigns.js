@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: /api/campaigns
-// Gemmer planlagte og nye kampagner i Cloudflare KV og sender en mail (via webhook),
-// når en kampagne markeres som "sat i gang".
+// Gemmer nye kampagner i Cloudflare KV og sender en mail (via webhook),
+// hver gang en kampagne tilføjes.
 //
 // Kræver i Cloudflare Pages → Settings:
 //   KV-binding:   CAMPAIGNS            (KV-namespace til kampagnerne)
@@ -76,7 +76,7 @@ function clean(b) {
   const link = typeof b.link === 'string' ? b.link.trim() : '';
   if (link && (!/^https?:\/\//i.test(link) || link.length > 300)) return { error: 'Linket skal starte med https://' };
   e.link = link;
-  e.status = b.status === 'live' ? 'live' : 'planned';
+  e.status = 'live'; // alle tilføjede kampagner er sat i gang og udløser en mail
   return { entry: e };
 }
 

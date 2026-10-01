@@ -1,7 +1,7 @@
 # Campaign Tracker
 
 Alzheimerforeningens overblik over kampagner: tidslinje, forbrug pr. uge, nøgletal pr. initiativ
-og en liste over planlagte og nye kampagner. Når en kampagne markeres som **sat i gang**,
+og en formular til nye kampagner. Når en kampagne tilføjes,
 får Anne-Katrine en mail.
 
 ## Indhold
@@ -9,7 +9,7 @@ får Anne-Katrine en mail.
 | Sti | Hvad |
 |---|---|
 | `site/index.html` | Selve dashboardet. Meta-tallene ligger indbygget i siden og opdateres dagligt. |
-| `functions/api/campaigns.js` | Cloudflare Pages Function: gemmer planlagte og nye kampagner og sender mail via webhook. |
+| `functions/api/campaigns.js` | Cloudflare Pages Function: gemmer nye kampagner og sender mail via webhook. |
 | `tools/build.py` | Fletter nye Meta-tal (fra Supermetrics) ind i `site/index.html`. |
 | `tools/rules.json` | Annoncekonti, formål og regler for, hvilket initiativ en kampagne hører til. |
 
@@ -34,7 +34,7 @@ får Anne-Katrine en mail.
 
 ## Mailen (Make eller Zapier)
 
-Funktionen sender en JSON-besked til `NOTIFY_WEBHOOK_URL`, når en kampagne sættes i gang:
+Funktionen sender en JSON-besked til `NOTIFY_WEBHOOK_URL`, når en kampagne tilføjes:
 
 ```json
 { "event": "campaign_live", "to": "…", "subject": "Ny kampagne sat i gang: …",

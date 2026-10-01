@@ -185,7 +185,7 @@ tfoot td{font-weight:600;border-bottom:0}
   <section aria-labelledby="h-week">
     <div class="sec-head">
       <h2 id="h-week">Kampagnetryk pr. uge</h2>
-      <p>Annoncekroner pr. uge fordelt på formål. Tallet over søjlen er antal aktive initiativer. Budget for planlagte og nye kampagner vises som stiplede søjler fra i dag og frem.</p>
+      <p>Annoncekroner pr. uge fordelt på formål. Tallet over søjlen er antal aktive initiativer. Budget for tilføjede kampagner vises som stiplede søjler fra i dag og frem.</p>
     </div>
     <div class="chart-box"><svg id="weekly" role="img" aria-label="Annonceforbrug pr. uge fordelt på formål"></svg></div>
   </section>
@@ -196,17 +196,11 @@ tfoot td{font-weight:600;border-bottom:0}
     <div class="tbl-box"><table id="tbl"></table></div>
   </section>
   <section aria-labelledby="h-plan">
-    <div class="sec-head"><h2 id="h-plan">Planlagte og nye kampagner</h2><p>Kampagner, der er planlagt eller netop sat i gang, også på andre platforme end Meta. Når en kampagne markeres som sat i gang, får Anne-Katrine en mail.</p></div>
+    <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Når du tilføjer en kampagne her, vises den med det samme i overblikket, og Anne-Katrine får en mail om, at den er sat i gang. Også kampagner på andre platforme end Meta.</p></div>
     <div class="plan-grid">
       <div class="plan-list" id="plan-list"><div class="empty">Henter kampagner …</div></div>
       <form id="plan-form" hidden novalidate>
-        <h3 id="f-title">Tilføj kampagne</h3>
-        <fieldset class="seg" id="f-status">
-          <legend>Status</legend>
-          <label for="s-plan"><input type="radio" name="status" id="s-plan" value="planned" checked> Planlagt</label>
-          <label for="s-live"><input type="radio" name="status" id="s-live" value="live"> Sat i gang</label>
-        </fieldset>
-        <p class="hint" id="f-hint">Planlagte kampagner vises med stiplet linje. Der sendes ingen mail.</p>
+        <h3>Tilføj kampagne</h3>
         <label for="p-name">Navn<input id="p-name" required maxlength="80" placeholder="Fx Demenslinien – efterår"></label>
         <div class="f2">
           <label for="p-platform">Platform<select id="p-platform"></select></label>
@@ -220,7 +214,7 @@ tfoot td{font-weight:600;border-bottom:0}
         <label for="p-budget"><span id="p-budget-lbl">Budget i alt, kr. (valgfrit)</span><input id="p-budget" type="number" min="0" step="100" inputmode="numeric"></label>
         <label for="p-note">Beskrivelse og bemærkninger<textarea id="p-note" maxlength="400" placeholder="Fx målgruppe, budskab eller afhængigheder"></textarea></label>
         <label for="p-link">Link til landingsside (valgfrit)<input id="p-link" type="url" maxlength="300" placeholder="https://www.alzheimer.dk/…"></label>
-        <div class="f-actions"><button type="submit" id="p-save">Tilføj som planlagt</button><button type="button" class="ghost" id="p-cancel" hidden>Annullér</button></div>
+        <div class="f-actions"><button type="submit" id="p-save">Tilføj og send mail til Anne-Katrine</button></div>
         <p class="form-msg" id="p-msg" role="status"></p>
       </form>
     </div>
@@ -251,7 +245,7 @@ const periodText = p => p.ongoing ? 'fra '+fmtD(p.start)+' · løbende' : fmtD(p
 const budgetText = p => p.ongoing ? kr(p.budget)+' pr. måned' : kr(p.budget);
 const todayISO = () => { const n=new Date(); return new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())).toISOString().slice(0,10); };
 function metaMatch(e){ // en meldt Meta-kampagne, der nu står i de daglige tal, vises kun én gang
-  if(e.status!=='live' || (e.platform||'Meta')!=='Meta') return false;
+  if((e.platform||'Meta')!=='Meta') return false;
   const n = (e.name||'').trim().toLowerCase(); if(n.length<4) return false;
   const from = toT(e.start) - 3*DAY;
   return INIT.some(i=>i.campaigns.some(k=>{ const kn=k.name.toLowerCase(); return (kn.includes(n)||n.includes(kn)) && toT(k.first)>=from; }));
@@ -271,7 +265,7 @@ $('k-leads').textContent = nf(INIT.reduce((a,i)=>a+(i.leads||0),0));
 function renderLive(){
   const live = INIT.filter(i=>i.running);
   const today = todayISO();
-  const meldt = visibleEntries().filter(e=>e.status==='live' && e.start<=today && (e.ongoing || e.end>=today));
+  const meldt = visibleEntries().filter(e=>e.start<=today && (e.ongoing || e.end>=today));
   const items = live.map(i=>{
     const ending = i.endsToday;
     const n = i.campaigns.filter(c=>c.running).length;
@@ -282,7 +276,7 @@ function renderLive(){
 
 // ---------- Legend ----------
 $('legend').innerHTML = CATS.map(c=>`<span><i class="sw" style="--c:var(--c-${c.id})"></i>${esc(c.label)}</span>`).join('')
-  + '<span><i class="sw meldt"></i>Sat i gang (meldt)</span><span><i class="sw plan"></i>Planlagt</span>';
+  + '<span><i class="sw meldt"></i>Tilføjet, afventer tal</span>';
 
 // ---------- Tooltip ----------
 const tip = $('tip');
@@ -312,7 +306,7 @@ function renderGantt(){
   }</div><div class="weeks">${weeks.map(t=>`<span style="left:${pct(t)}%;width:${100/weeks.length}%">${isoWeek(t)}</span>`).join('')}</div></div></div>`;
   CATS.forEach(c=>{
     const rows = INIT.filter(i=>i.cat===c.id);
-    const plans = visibleEntries().filter(p=>p.cat===c.id);
+    const plans = visibleEntries().filter(p=>p.cat===c.id).map(p=>({...p,status:'live'}));
     if(!rows.length && !plans.length) return;
     h += `<div class="g-row g-cat" style="--cc:var(--c-${c.id})"><div class="g-label">${esc(c.label)}</div><div class="g-track"></div></div>`;
     rows.forEach(i=>{
@@ -333,8 +327,8 @@ function renderGantt(){
     plans.forEach(p=>{
       const a = toT(p.start), b = planEndT(p), isLive = p.status==='live';
       const plat = (p.platform||'Meta')!=='Meta' ? ' · '+esc(p.platform) : '';
-      const tipHtml = `<b>${esc(p.name)} (${isLive?'sat i gang':'planlagt'})</b>${periodText(p)}${plat}${p.budget?' · budget '+budgetText(p):''}${p.note?'<br>'+esc(p.note):''}`;
-      const tag = isLive ? '<span class="tag run">Sat i gang</span>' : `<span class="tag">${p.ongoing?'Løbende':'Planlagt'}</span>`;
+      const tipHtml = `<b>${esc(p.name)} (tilføjet)</b>${periodText(p)}${plat}${p.budget?' · budget '+budgetText(p):''}${p.note?'<br>'+esc(p.note):''}`;
+      const tag = '<span class="tag run">Ny</span>';
       h += `<div class="g-row" style="--cc:var(--c-${c.id})"><div class="g-label" title="${esc(p.name)}"><span class="nm">${esc(p.name)}${plat?'<span style="color:var(--muted);font-size:12px">'+plat+'</span>':''}</span>${tag}</div><div class="g-track"><div class="bar ${isLive?'meldt':'plan'}${p.ongoing?' run':''}" tabindex="0" data-tip="${esc(tipHtml)}" style="left:${pct(a)}%;width:${Math.max(.35,pct(b)-pct(a))}%"></div></div></div>`;
     });
   });
@@ -370,7 +364,7 @@ function renderWeekly(){
     const x = L + w*cw + (cw-bw)/2;
     let base = 0;
     CATS.forEach(c=>{ const v=act[w][c.id]; if(v>0){ s += `<rect x="${x}" y="${y(base+v)}" width="${bw}" height="${y(base)-y(base+v)}" fill="var(--c-${c.id})"><title>Uge ${isoWeek(t)} · ${c.label}: ${kr(v)}</title></rect>`; base+=v; } });
-    CATS.forEach(c=>{ const v=pl[w][c.id]; if(v>0){ s += `<rect x="${x+1}" y="${y(base+v)}" width="${bw-2}" height="${Math.max(0,y(base)-y(base+v)-1)}" fill="none" stroke="var(--c-${c.id})" stroke-width="1.5" stroke-dasharray="4 3"><title>Uge ${isoWeek(t)} · ${c.label} (planlagt): ${kr(v)}</title></rect>`; base+=v; } });
+    CATS.forEach(c=>{ const v=pl[w][c.id]; if(v>0){ s += `<rect x="${x+1}" y="${y(base+v)}" width="${bw-2}" height="${Math.max(0,y(base)-y(base+v)-1)}" fill="none" stroke="var(--c-${c.id})" stroke-width="1.5" stroke-dasharray="4 3"><title>Uge ${isoWeek(t)} · ${c.label} (tilføjet kampagne): ${kr(v)}</title></rect>`; base+=v; } });
     if(cnt[w].size) s += `<text x="${x+bw/2}" y="${y(base)-7}" text-anchor="middle" font-size="11" style="fill:var(--ink)">${cnt[w].size}</text>`;
     s += `<text x="${x+bw/2}" y="${VH-B+16}" text-anchor="middle" font-size="10.5">${isoWeek(t)}</text>`;
   });
@@ -446,12 +440,11 @@ function renderTable(){
 }
 $('tbl-reset').addEventListener('click',()=>{ tblState.key=null; renderTable(); });
 
-// ---------- Planlagte og nye kampagner ----------
+// ---------- Nye kampagner ----------
 const API = '/api/campaigns';
 const NOTIFY_NAME = 'Anne-Katrine';
 const PLATFORMS = ['Meta','Google Ads','Google Grants','LinkedIn','Nyhedsbrev','Andet'];
 const form = $('plan-form'), msg = $('p-msg');
-let apiOk = false, mode = { kind:'new', id:null };
 
 function setMsg(text, kind){ msg.textContent = text; msg.className = 'form-msg' + (kind ? ' ' + kind : ''); }
 
@@ -459,30 +452,23 @@ function itemHtml(p){
   const c = CAT[p.cat] || {label:p.cat};
   const plat = p.platform || 'Meta';
   const matched = metaMatch(p);
-  const acts = canWrite ? `<span class="acts" data-id="${esc(p.id)}">${p.status==='planned'?'<button class="ghost" type="button" data-act="launch">Sæt i gang</button>':''}<button class="ghost" type="button" data-act="del">Fjern</button></span>` : '';
+  const acts = canWrite ? `<span class="acts" data-id="${esc(p.id)}"><button class="ghost" type="button" data-act="del">Fjern</button></span>` : '';
   const link = p.link ? `<span class="meta"><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.link.replace(/^https?:\/\//,''))}</a></span>` : '';
-  const extra = p.status==='live' ? ` · sat i gang${p.notifiedAt ? ', mail sendt' : ''}${matched ? ' · vises nu med tal fra Meta' : ''}` : '';
+  const extra = `${p.notifiedAt ? ' · mail sendt' : ''}${matched ? ' · vises nu med tal fra Meta' : ''}`;
   return `<div class="p-item" style="--cc:var(--c-${p.cat})"><div class="top"><span class="nm">${esc(p.name)}</span>${acts}</div>
     <span class="meta">${esc(c.label)} · ${esc(plat)} · ${periodText(p)}${p.budget?' · '+budgetText(p):''}${extra}</span>${p.note?`<span class="dep">${esc(p.note)}</span>`:''}${link}</div>`;
 }
 
 function renderPlan(state){
   const list = $('plan-list');
-  if(state==='unavailable'){ list.innerHTML = '<div class="empty">Listen over planlagte og nye kampagner kunne ikke hentes. Prøv at genindlæse siden.</div>'; return; }
+  if(state==='unavailable'){ list.innerHTML = '<div class="empty">Listen over nye kampagner kunne ikke hentes. Prøv at genindlæse siden.</div>'; return; }
   if(state==='loading'){ list.innerHTML = '<div class="empty">Henter kampagner …</div>'; return; }
-  if(!entries.length){ list.innerHTML = `<div class="empty">Der er ingen planlagte eller nye kampagner endnu.${canWrite?' Tilføj den første med formularen.':''}</div>`; return; }
-  const by = (a,b)=>a.start.localeCompare(b.start);
-  const live = entries.filter(p=>p.status==='live').sort(by).reverse();
-  const plan = entries.filter(p=>p.status!=='live').sort(by);
-  let h = '';
-  if(plan.length) h += '<div class="p-group">Planlagt</div>' + plan.map(itemHtml).join('');
-  if(live.length) h += '<div class="p-group">Sat i gang</div>' + live.map(itemHtml).join('');
-  list.innerHTML = h;
+  if(!entries.length){ list.innerHTML = `<div class="empty">Der er ikke tilføjet nogen kampagner endnu.${canWrite?' Brug formularen, når en ny kampagne er sat i gang.':''}</div>`; return; }
+  list.innerHTML = entries.slice().sort((a,b)=>b.start.localeCompare(a.start)).map(itemHtml).join('');
   list.querySelectorAll('.acts').forEach(w=>{
     w.addEventListener('click', async e=>{
       const btn = e.target.closest('button'); if(!btn) return;
       const id = w.dataset.id, act = btn.dataset.act;
-      if(act==='launch'){ startLaunch(entries.find(x=>x.id===id)); return; }
       if(act==='del'){ w.innerHTML = '<button class="ghost" type="button" data-act="keep">Behold</button> <button class="danger" type="button" data-act="confirm">Fjern kampagnen</button>'; return; }
       if(act==='keep'){ renderPlan('ok'); return; }
       if(act==='confirm'){ btn.disabled = true;
@@ -497,33 +483,14 @@ function renderAll(){ renderLive(); renderGantt(); renderWeekly(); }
 // ---------- Formular ----------
 $('p-cat').innerHTML = CATS.filter(c=>c.id!=='ovrige').map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('');
 $('p-platform').innerHTML = PLATFORMS.map(p=>`<option>${p}</option>`).join('');
-const statusVal = () => $('s-live').checked ? 'live' : 'planned';
 function syncForm(){
-  const on = $('p-ongoing').checked, end = $('p-end'), live = mode.kind==='launch' || statusVal()==='live';
+  const on = $('p-ongoing').checked, end = $('p-end');
   end.disabled = on; end.required = !on; if(on) end.value = '';
   $('p-budget-lbl').textContent = on ? 'Budget pr. måned, kr. (valgfrit)' : 'Budget i alt, kr. (valgfrit)';
-  if(live && !$('p-start').value) $('p-start').value = todayISO();
-  $('f-hint').textContent = live ? `Kampagnen vises med det samme i overblikket, og ${NOTIFY_NAME} får en mail om, at den er sat i gang.` : 'Planlagte kampagner vises med stiplet linje. Der sendes ingen mail.';
-  $('p-save').textContent = mode.kind==='launch' ? `Sæt i gang og send mail til ${NOTIFY_NAME}` : (live ? `Tilføj og send mail til ${NOTIFY_NAME}` : 'Tilføj som planlagt');
+  if(!$('p-start').value) $('p-start').value = todayISO();
 }
-['p-ongoing','s-plan','s-live'].forEach(id=>$(id).addEventListener('change', syncForm));
-
-function resetForm(){
-  form.reset(); mode = { kind:'new', id:null };
-  $('f-title').textContent = 'Tilføj kampagne'; $('f-status').hidden = false; $('p-cancel').hidden = true;
-  syncForm();
-}
-function startLaunch(p){
-  if(!p) return;
-  mode = { kind:'launch', id:p.id };
-  $('f-title').textContent = 'Sæt kampagnen i gang'; $('f-status').hidden = true; $('p-cancel').hidden = false;
-  $('p-name').value = p.name; $('p-platform').value = p.platform || 'Meta'; $('p-cat').value = p.cat;
-  $('p-start').value = todayISO(); $('p-ongoing').checked = !!p.ongoing; $('p-end').value = p.end || '';
-  $('p-budget').value = p.budget ?? ''; $('p-note').value = p.note || ''; $('p-link').value = p.link || '';
-  setMsg('Tjek datoer og budget, og tryk på knappen for at sætte kampagnen i gang.');
-  syncForm(); form.scrollIntoView({behavior:'smooth', block:'start'}); $('p-name').focus({preventScroll:true});
-}
-$('p-cancel').addEventListener('click', ()=>{ resetForm(); setMsg(''); });
+$('p-ongoing').addEventListener('change', syncForm);
+function resetForm(){ form.reset(); syncForm(); }
 
 async function errText(r){ try{ const j = await r.json(); return j.error || ('Fejl ' + r.status); }catch(e){ return 'Fejl ' + r.status; } }
 
@@ -533,21 +500,18 @@ form.addEventListener('submit', async e=>{
   const body = { name:$('p-name').value.trim(), platform:$('p-platform').value, cat:$('p-cat').value,
     start:$('p-start').value, end: ongoing ? null : $('p-end').value, ongoing,
     budget: $('p-budget').value ? Number($('p-budget').value) : null,
-    note:$('p-note').value.trim(), link:$('p-link').value.trim(),
-    status: mode.kind==='launch' ? 'live' : statusVal() };
+    note:$('p-note').value.trim(), link:$('p-link').value.trim(), status:'live' };
   if(!body.name || !body.start || (!ongoing && !body.end)){ setMsg(ongoing ? 'Udfyld navn og start.' : 'Udfyld navn, start og slut, eller vælg at kampagnen kører løbende.', 'err'); return; }
   if(!ongoing && body.end < body.start){ setMsg('Slutdatoen ligger før startdatoen. Ret en af datoerne.', 'err'); return; }
   if(body.link && !/^https?:\/\//i.test(body.link)){ setMsg('Linket skal starte med https://', 'err'); return; }
-  const btn = $('p-save'); btn.disabled = true; setMsg(body.status==='live' ? 'Gemmer og sender mail …' : 'Gemmer …');
+  const btn = $('p-save'); btn.disabled = true; setMsg('Gemmer og sender mail …');
   try{
-    const url = mode.kind==='launch' ? API+'?id='+encodeURIComponent(mode.id) : API;
-    const r = await fetch(url, { method: mode.kind==='launch' ? 'PATCH' : 'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const r = await fetch(API, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
     if(!r.ok) throw new Error(await errText(r));
     const res = await r.json();
     resetForm(); await loadEntries();
-    if(body.status!=='live') setMsg('Kampagnen er tilføjet som planlagt.', 'ok');
-    else if(res.mail && res.mail.sent) setMsg(`Kampagnen er sat i gang, og ${NOTIFY_NAME} har fået en mail.`, 'ok');
-    else setMsg(`Kampagnen er gemt og vises i overblikket, men mailen blev ikke sendt: ${res.mail && res.mail.error ? res.mail.error : 'ukendt fejl'} Giv ${NOTIFY_NAME} besked på anden vis.`, 'err');
+    if(res.mail && res.mail.sent) setMsg(`Kampagnen er tilføjet, og ${NOTIFY_NAME} har fået en mail.`, 'ok');
+    else setMsg(`Kampagnen er tilføjet og vises i overblikket, men mailen blev ikke sendt: ${res.mail && res.mail.error ? res.mail.error : 'ukendt fejl'} Giv ${NOTIFY_NAME} besked på anden vis.`, 'err');
   }catch(err){ setMsg('Kampagnen blev ikke gemt: ' + err.message, 'err'); }
   finally{ btn.disabled = false; }
 });
@@ -564,7 +528,7 @@ async function loadEntries(){
 }
 
 renderAll(); renderTable(); renderPlan('loading'); syncForm();
-loadEntries().then(()=>{ apiOk = true; }).catch(()=>{ form.hidden = true; renderPlan('unavailable'); });
+loadEntries().then(()=>{}).catch(()=>{ form.hidden = true; renderPlan('unavailable'); });
 
 // Rul tidslinjen, så "i dag" er synlig på smalle skærme
 requestAnimationFrame(()=>{ const sc=$('g-scroll'); const g=$('gantt'); const lab=parseFloat(getComputedStyle(g).getPropertyValue('--label'))||220;

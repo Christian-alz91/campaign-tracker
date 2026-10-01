@@ -124,7 +124,8 @@ def main():
         meta = inits[iid]; alld = {}; campaigns = []
         for cid, c, dd in members:
             for day, (cost, _) in dd.items(): alld[day] = alld.get(day, 0) + cost
-            running = asof in dd or prev_day in dd
+            ended = bool(c.get('end')) and c['end'] < asof   # planlagt slutdato er passeret
+            running = (asof in dd or prev_day in dd) and not ended
             leads = sum(v[1] for v in dd.values())
             campaigns.append(dict(name=c['name'].strip(), account=rules['accountShort'].get(c['account'], c['account']),
                 objective=c.get('objective'), scheduledStart=c.get('start'), scheduledEnd=c.get('end'),

@@ -326,7 +326,7 @@ function renderGantt(){
         const run = last && i.running && !i.endsToday;
         const days = Math.round((b-a)/DAY);
         const spend = Object.entries(i.daily).filter(([d])=>{const t=toT(d);return t>=a&&t<b;}).reduce((x,[,v])=>x+v,0);
-        const tipHtml = `<b>${esc(i.name)}</b>${fmtD(s[0])} – ${fmtD(s[1])}${clip?' (startede før juli)':''}${run?' · kører fortsat':''}<br>${days} dage · ${kr(spend)}`;
+        const tipHtml = `<b>${esc(i.name)}</b>${fmtD(s[0])} – ${fmtD(s[1])}${clip?' (startede før '+fmtD(D.window.start)+')':''}${run?' · kører fortsat':''}<br>${days} dage · ${kr(spend)}`;
         bars += `<div class="bar${clip?' clip':''}${run?' run':''}" tabindex="0" data-tip="${esc(tipHtml)}" style="left:${pct(a)}%;width:${Math.max(.35,pct(b)-pct(a))}%"></div>`;
       });
       h += `<div class="g-row" style="--cc:var(--c-${c.id})"><div class="g-label" title="${esc(i.name)}"><span class="nm">${esc(i.name)}</span>${tag}</div><div class="g-track">${bars}</div></div>`;

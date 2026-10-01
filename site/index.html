@@ -196,7 +196,7 @@ tfoot td{font-weight:600;border-bottom:0}
     <div class="tbl-box"><table id="tbl"></table></div>
   </section>
   <section aria-labelledby="h-plan">
-    <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Når du tilføjer en kampagne her, vises den med det samme i overblikket, og Anne-Katrine får en mail om, at den er sat i gang. Også kampagner på andre platforme end Meta.</p></div>
+    <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Kampagner, der lige er sat i gang, også på andre platforme end Meta. De vises med det samme i overblikket, indtil tallene fra Meta kommer ind.</p></div>
     <div class="plan-grid">
       <div class="plan-list" id="plan-list"><div class="empty">Henter kampagner …</div></div>
       <form id="plan-form" hidden novalidate>
@@ -522,7 +522,7 @@ async function loadEntries(){
   if(!r.ok) throw new Error(await errText(r));
   const j = await r.json();
   entries = (j.entries||[]).filter(p=>p.start && (p.end || p.ongoing) && CAT[p.cat]);
-  canWrite = j.canEdit !== false;
+  canWrite = j.canEdit === true;
   form.hidden = !canWrite;
   renderPlan('ok'); renderAll();
 }

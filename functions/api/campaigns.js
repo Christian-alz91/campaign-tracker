@@ -4,11 +4,16 @@
 //
 // Kræver i Cloudflare Pages → Settings:
 //   KV-binding:   CAMPAIGNS            (KV-namespace til kampagnerne)
-//   Variabler:    NOTIFY_WEBHOOK_URL   (Make/Zapier-webhook, der sender mailen)
+//   Variabler:    EDITORS              (kommaseparerede mails, der må tilføje og fjerne kampagner – fx kun Christians)
+//                 ACCESS_TEAM_DOMAIN   (Zero Trust-teamdomæne, fx alzheimer.cloudflareaccess.com)
+//                 ACCESS_AUD           (Application Audience (AUD) Tag fra Access-applikationen)
+//                 NOTIFY_WEBHOOK_URL   (Make/Zapier-webhook, der sender mailen)
 //                 NOTIFY_EMAIL         (modtager, fx Anne-Katrines mail – sendes med til webhooken)
 //                 DASHBOARD_URL        (fx https://kampagner.alzheimer.dk)
-//                 EDITORS              (valgfri: kommaseparerede mails, der må tilføje/ændre; tom = alle med adgang)
-// Siden og /api beskyttes af Cloudflare Access, som sætter headeren cf-access-authenticated-user-email.
+//
+// Hvem der er logget ind, afgøres ved at verificere Cloudflare Access' signerede token
+// (Cf-Access-Jwt-Assertion). Kan brugeren ikke verificeres, eller står mailen ikke i EDITORS,
+// kan vedkommende kun se listen – ikke tilføje eller fjerne kampagner.
 
 const CATS = {
   frivillige: 'Frivillige og koordinatorer',
@@ -27,12 +32,55 @@ const json = (obj, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
-const who = (req) => (req.headers.get('cf-access-authenticated-user-email') || '').toLowerCase() || null;
+// ---------- Login (Cloudflare Access) ----------
+const b64url = (s) => {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+};
+const dec = (bytes) => JSON.parse(new TextDecoder().decode(bytes));
+let certCache = { at: 0, team: '', keys: [] };
 
-function canEdit(req, env) {
+async function accessKeys(team) {
+  if (certCache.team === team && Date.now() - certCache.at < 3600e3) return certCache.keys;
+  const r = await fetch(`https://${team}/cdn-cgi/access/certs`);
+  if (!r.ok) throw new Error('certs');
+  const j = await r.json();
+  certCache = { at: Date.now(), team, keys: j.keys || [] };
+  return certCache.keys;
+}
+
+// Returnerer den indloggede mail, hvis tokenet er gyldigt og udstedt til netop denne app; ellers null.
+async function verifiedEmail(req, env) {
+  const team = (env.ACCESS_TEAM_DOMAIN || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  const aud = (env.ACCESS_AUD || '').trim();
+  const token = req.headers.get('cf-access-jwt-assertion');
+  if (!team || !aud || !token) return null;
+  try {
+    const [h, p, sig] = token.split('.');
+    const header = dec(b64url(h)), payload = dec(b64url(p));
+    if (header.alg !== 'RS256') return null;
+    let jwk = (await accessKeys(team)).find((k) => k.kid === header.kid);
+    if (!jwk) { certCache.at = 0; jwk = (await accessKeys(team)).find((k) => k.kid === header.kid); }
+    if (!jwk) return null;
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+    const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64url(sig), new TextEncoder().encode(`${h}.${p}`));
+    if (!ok) return null;
+    const now = Math.floor(Date.now() / 1000);
+    const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+    if (!auds.includes(aud)) return null;
+    if (payload.exp && payload.exp < now) return null;
+    if (payload.iss && payload.iss !== `https://${team}`) return null;
+    return (payload.email || '').toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function editor(req, env) {
+  const email = await verifiedEmail(req, env);
   const allow = (env.EDITORS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-  if (!allow.length) return true;
-  return allow.includes(who(req) || '');
+  return { email, canEdit: !!email && allow.includes(email) };
 }
 
 function sameOrigin(req) {
@@ -130,24 +178,26 @@ async function notify(e, env, by) {
   }
 }
 
-function guard(request, env) {
-  if (!env.CAMPAIGNS) return json({ error: 'Databasen (KV-bindingen CAMPAIGNS) er ikke sat op.' }, 503);
-  if (!sameOrigin(request)) return json({ error: 'Forespørgslen kom fra et andet domæne.' }, 403);
-  if (!canEdit(request, env)) return json({ error: 'Du har ikke adgang til at ændre kampagner.' }, 403);
-  return null;
+async function guard(request, env) {
+  if (!env.CAMPAIGNS) return { res: json({ error: 'Databasen (KV-bindingen CAMPAIGNS) er ikke sat op.' }, 503) };
+  if (!sameOrigin(request)) return { res: json({ error: 'Forespørgslen kom fra et andet domæne.' }, 403) };
+  const ed = await editor(request, env);
+  if (!ed.canEdit) return { res: json({ error: 'Du har ikke adgang til at tilføje eller fjerne kampagner.' }, 403) };
+  return { email: ed.email };
 }
 
 export async function onRequestGet({ request, env }) {
   if (!env.CAMPAIGNS) return json({ error: 'Databasen (KV-bindingen CAMPAIGNS) er ikke sat op.' }, 503);
-  return json({ entries: await load(env), canEdit: canEdit(request, env) });
+  const ed = await editor(request, env);
+  return json({ entries: await load(env), canEdit: ed.canEdit });
 }
 
 export async function onRequestPost({ request, env }) {
-  const g = guard(request, env); if (g) return g;
+  const g = await guard(request, env); if (g.res) return g.res;
   let body; try { body = await request.json(); } catch { return json({ error: 'Ugyldige data.' }, 400); }
   const { entry, error } = clean(body);
   if (error) return json({ error }, 400);
-  const by = who(request);
+  const by = g.email;
   entry.id = crypto.randomUUID();
   entry.createdAt = new Date().toISOString();
   entry.createdBy = by;
@@ -163,7 +213,7 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestPatch({ request, env }) {
-  const g = guard(request, env); if (g) return g;
+  const g = await guard(request, env); if (g.res) return g.res;
   const id = new URL(request.url).searchParams.get('id');
   let body; try { body = await request.json(); } catch { return json({ error: 'Ugyldige data.' }, 400); }
   const list = await load(env);
@@ -175,7 +225,7 @@ export async function onRequestPatch({ request, env }) {
   const next = { ...prev, ...entry, id: prev.id, createdAt: prev.createdAt, createdBy: prev.createdBy, updatedAt: new Date().toISOString() };
   let mail = null;
   if (prev.status !== 'live' && next.status === 'live') {
-    mail = await notify(next, env, who(request));
+    mail = await notify(next, env, g.email);
     if (mail.sent) next.notifiedAt = new Date().toISOString();
   }
   list[i] = next;
@@ -184,7 +234,7 @@ export async function onRequestPatch({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  const g = guard(request, env); if (g) return g;
+  const g = await guard(request, env); if (g.res) return g.res;
   const id = new URL(request.url).searchParams.get('id');
   const list = await load(env);
   const next = list.filter((x) => x.id !== id);

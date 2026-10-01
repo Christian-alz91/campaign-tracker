@@ -21,16 +21,20 @@ får Anne-Katrine en mail.
    - Build output directory: `site`
 2. **Database:** Workers & Pages → KV → opret et namespace, fx `campaign-tracker`.
    I Pages-projektet: Settings → Bindings → Add → KV namespace, navn **`CAMPAIGNS`**.
-3. **Variabler** (Settings → Variables and Secrets):
-   - `NOTIFY_WEBHOOK_URL` – webhooken i Make eller Zapier, der sender mailen (gem som *Secret*)
+3. **Adgang (Cloudflare Access):** Zero Trust → Access → Applications → Add an application → Self-hosted.
+   - Domæne: projektets adresse (fx `campaign-tracker-3nl.pages.dev`) og evt. eget domæne.
+   - Policy: *Allow* for de mails, der må se siden (fx Christian og Anne-Katrine).
+   - Login foregår med en engangskode på mail.
+   - Kopiér **Application Audience (AUD) Tag** fra applikationens oversigt og jeres **team domain** (fx `alzheimer.cloudflareaccess.com`).
+4. **Variabler** (Pages-projektet → Settings → Variables and Secrets):
+   - `EDITORS` – mails, der må tilføje og fjerne kampagner (fx kun Christians). Alle andre kan kun se listen.
+   - `ACCESS_TEAM_DOMAIN` – team domain fra trin 3
+   - `ACCESS_AUD` – AUD-tag fra trin 3
+   - `NOTIFY_WEBHOOK_URL` – webhooken i Make, der sender mailen (gem som *Secret*)
    - `NOTIFY_EMAIL` – Anne-Katrines mailadresse
    - `DASHBOARD_URL` – fx `https://kampagner.alzheimer.dk`
-   - `EDITORS` *(valgfri)* – kommaseparerede mails, der må tilføje og ændre kampagner. Tom = alle med adgang.
-4. **Eget domæne:** Pages-projektet → Custom domains → fx `kampagner.alzheimer.dk`. IT opretter den CNAME-post, Cloudflare viser.
-5. **Adgang:** Zero Trust → Access → Applications → Self-hosted → domænet ovenfor.
-   Policy: *Allow* for de mails, der skal have adgang (fx Anne-Katrine og Christian eller alle `@alzheimer.dk`).
-   Login foregår med en engangskode på mail.
-6. Deploy igen efter trin 2–3, så binding og variabler slår igennem.
+5. **Eget domæne** (valgfrit): Pages-projektet → Custom domains. Husk at tilføje domænet i Access-applikationen også.
+6. Deploy igen (Deployments → Retry deployment) efter trin 2 og 4, så binding og variabler slår igennem.
 
 ## Mailen (Make eller Zapier)
 

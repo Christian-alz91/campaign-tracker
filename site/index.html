@@ -130,7 +130,11 @@ fieldset.seg label:has(input:checked){border-color:var(--ink);background:var(--s
 .hint{margin:-4px 0 0;font-size:12.5px;color:var(--muted)}
 .f-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .p-group{font:600 12px var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:6px 0 -2px}
-.p-item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.p-item .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.p-item .acts .end-lbl{display:flex;gap:6px;align-items:center;font-size:12.5px}
+.p-item .acts .end-lbl input{width:auto;padding:4px 6px;font-size:13px}
+.p-item .acts button.small{padding:5px 10px;font-size:13px}
+.p-item .acts .warn-txt{font-size:12.5px;color:var(--muted);max-width:34ch}
 .p-item a{color:var(--ink)}
 .bar.meldt{background:color-mix(in srgb,var(--cc) 40%,transparent);border:1.5px solid var(--cc)}
 .sw.meldt{background:color-mix(in srgb,var(--muted) 40%,transparent);border:1.5px solid var(--muted)}
@@ -199,7 +203,7 @@ tfoot td{font-weight:600;border-bottom:0}
     <div class="tbl-box"><table id="tbl"></table></div>
   </section>
   <section aria-labelledby="h-plan" id="plan-section" hidden>
-    <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Kampagner, der lige er sat i gang, også på andre platforme end Meta. De vises med det samme i overblikket, indtil tallene fra Meta kommer ind.</p></div>
+    <div class="sec-head"><h2 id="h-plan">Nye kampagner</h2><p>Kampagner, der lige er sat i gang, også på andre platforme end Meta. De vises med det samme i overblikket, indtil tallene fra Meta kommer ind. Brug Afslut, når en kampagne er slukket, så historikken bevares.</p></div>
     <div class="plan-grid">
       <div class="plan-list" id="plan-list"><div class="empty">Henter kampagner …</div></div>
       <form id="plan-form" hidden novalidate>
@@ -245,7 +249,7 @@ const fmtD = s => { const t=new Date(toT(s)); return t.getUTCDate()+'. '+MONTHS[
 const isoWeek = t => { const d=new Date(t); const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3); const fy=Date.UTC(d.getUTCFullYear(),0,4); return 1+Math.round(((d-fy)/DAY-3+((new Date(fy).getUTCDay()+6)%7))/7); };
 const planEndT = p => p.ongoing ? W1 : toT(p.end)+DAY;
 const periodText = p => p.ongoing ? 'fra '+fmtD(p.start)+' · løbende' : fmtD(p.start)+' – '+fmtD(p.end);
-const budgetText = p => p.ongoing ? kr(p.budget)+' pr. måned' : kr(p.budget);
+const budgetText = p => (p.ongoing || p.budgetMonthly) ? kr(p.budget)+' pr. måned' : kr(p.budget);
 const todayISO = () => { const n=new Date(); return new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())).toISOString().slice(0,10); };
 function metaMatch(e){ // en meldt Meta-kampagne, der nu står i de daglige tal, vises kun én gang
   if((e.platform||'Meta')!=='Meta') return false;
@@ -331,7 +335,7 @@ function renderGantt(){
       const a = toT(p.start), b = planEndT(p), isLive = p.status==='live';
       const plat = (p.platform||'Meta')!=='Meta' ? ' · '+esc(p.platform) : '';
       const tipHtml = `<b>${esc(p.name)} (tilføjet)</b>${periodText(p)}${plat}${p.budget?' · budget '+budgetText(p):''}${p.note?'<br>'+esc(p.note):''}`;
-      const tag = '<span class="tag run">Ny</span>';
+      const tag = (p.ongoing || p.end >= todayISO()) ? '<span class="tag run">Ny</span>' : '<span class="tag">Afsluttet</span>';
       h += `<div class="g-row" style="--cc:var(--c-${c.id})"><div class="g-label" title="${esc(p.name)}"><span class="nm">${esc(p.name)}${plat?'<span style="color:var(--muted);font-size:12px">'+plat+'</span>':''}</span>${tag}</div><div class="g-track"><div class="bar ${isLive?'meldt':'plan'}${p.ongoing?' run':''}" tabindex="0" data-tip="${esc(tipHtml)}" style="left:${pct(a)}%;width:${Math.max(.35,pct(b)-pct(a))}%"></div></div></div>`;
     });
   });
@@ -353,7 +357,7 @@ function renderWeekly(){
   const cnt = weeks.map(()=>new Set());
   INIT.forEach(i=>Object.entries(i.daily).forEach(([d,v])=>{ const w=Math.floor((toT(d)-W0)/DAY/7); if(w>=0&&w<weeks.length){ act[w][i.cat]+=v; cnt[w].add(i.id);} }));
   const tdT = toT(todayISO());
-  visibleEntries().forEach(p=>{ const a0=toT(p.start), b=planEndT(p); const days=Math.max(1,(b-a0)/DAY); const perDay=p.ongoing ? (p.budget||0)*12/365 : (p.budget||0)/days;
+  visibleEntries().forEach(p=>{ const a0=toT(p.start), b=planEndT(p); const days=Math.max(1,(b-a0)/DAY); const perDay=(p.ongoing || p.budgetMonthly) ? (p.budget||0)*12/365 : (p.budget||0)/days;
     for(let t=Math.max(a0,tdT);t<b;t+=DAY){ const w=Math.floor((t-W0)/DAY/7); if(w>=0&&w<weeks.length){ pl[w][p.cat]+=perDay; cnt[w].add('p:'+p.id);} } });
   const tot = weeks.map((_,w)=>CATS.reduce((s,c)=>s+act[w][c.id]+pl[w][c.id],0));
   const maxV = Math.max(1000,...tot);
@@ -455,9 +459,10 @@ function itemHtml(p){
   const c = CAT[p.cat] || {label:p.cat};
   const plat = p.platform || 'Meta';
   const matched = metaMatch(p);
-  const acts = canWrite ? `<span class="acts" data-id="${esc(p.id)}"><button class="ghost" type="button" data-act="del">Fjern</button></span>` : '';
+  const active = p.ongoing || p.end >= todayISO();
+  const acts = canWrite ? `<span class="acts" data-id="${esc(p.id)}">${active?'<button class="ghost" type="button" data-act="end">Afslut</button>':''}<button class="ghost" type="button" data-act="del">Slet</button></span>` : '';
   const link = p.link ? `<span class="meta"><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.link.replace(/^https?:\/\//,''))}</a></span>` : '';
-  const extra = `${p.notifiedAt ? ' · mail sendt' : ''}${matched ? ' · vises nu med tal fra Meta' : ''}`;
+  const extra = `${active ? '' : ' · afsluttet'}${p.notifiedAt ? ' · mail sendt' : ''}${matched ? ' · vises nu med tal fra Meta' : ''}`;
   return `<div class="p-item" style="--cc:var(--c-${p.cat})"><div class="top"><span class="nm">${esc(p.name)}</span>${acts}</div>
     <span class="meta">${esc(c.label)} · ${esc(plat)} · ${periodText(p)}${p.budget?' · '+budgetText(p):''}${extra}</span>${p.note?`<span class="dep">${esc(p.note)}</span>`:''}${link}</div>`;
 }
@@ -472,11 +477,16 @@ function renderPlan(state){
     w.addEventListener('click', async e=>{
       const btn = e.target.closest('button'); if(!btn) return;
       const id = w.dataset.id, act = btn.dataset.act;
-      if(act==='del'){ w.innerHTML = '<button class="ghost" type="button" data-act="keep">Behold</button> <button class="danger" type="button" data-act="confirm">Fjern kampagnen</button>'; return; }
+      if(act==='end'){ const p = entries.find(x=>x.id===id); const min = p ? p.start : '';
+        w.innerHTML = `<label class="end-lbl" for="end-${esc(id)}">Sidste dag<input type="date" id="end-${esc(id)}" value="${todayISO()}" min="${esc(min)}"></label> <button class="ghost" type="button" data-act="keep">Annullér</button> <button type="button" class="small" data-act="end-confirm">Afslut kampagnen</button>`; return; }
+      if(act==='end-confirm'){ const d = w.querySelector('input[type=date]').value; if(!d) return; btn.disabled = true;
+        try{ const r = await fetch(API+'?id='+encodeURIComponent(id), {method:'PATCH', headers:{'content-type':'application/json'}, body: JSON.stringify({end:d, ongoing:false})}); if(!r.ok) throw new Error(await errText(r)); await loadEntries(); }
+        catch(err){ btn.disabled=false; btn.textContent='Kunne ikke afslutte – prøv igen'; btn.title = err.message; } return; }
+      if(act==='del'){ w.innerHTML = '<span class="warn-txt">Sletter kampagnen helt, også fra tidslinjen. Brug Afslut, hvis den bare er slukket.</span> <button class="ghost" type="button" data-act="keep">Behold</button> <button class="danger" type="button" data-act="confirm">Slet kampagnen</button>'; return; }
       if(act==='keep'){ renderPlan('ok'); return; }
       if(act==='confirm'){ btn.disabled = true;
         try{ const r = await fetch(API+'?id='+encodeURIComponent(id), {method:'DELETE'}); if(!r.ok) throw new Error(await errText(r)); await loadEntries(); }
-        catch(err){ btn.disabled=false; btn.textContent='Kunne ikke fjerne – prøv igen'; } }
+        catch(err){ btn.disabled=false; btn.textContent='Kunne ikke slette – prøv igen'; } }
     });
   });
 }

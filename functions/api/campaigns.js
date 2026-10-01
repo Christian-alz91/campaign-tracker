@@ -120,6 +120,7 @@ function clean(b) {
     if (!isFinite(n) || n < 0 || n > 10000000) return { error: 'Budgettet er ugyldigt.' };
     e.budget = Math.round(n);
   }
+  e.budgetMonthly = e.ongoing || !!b.budgetMonthly; // løbende kampagner har månedsbudget – også efter de er afsluttet
   e.note = typeof b.note === 'string' ? b.note.trim().slice(0, 400) : '';
   const link = typeof b.link === 'string' ? b.link.trim() : '';
   if (link && (!/^https?:\/\//i.test(link) || link.length > 300)) return { error: 'Linket skal starte med https://' };
@@ -137,7 +138,7 @@ const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<':
 
 function mailContent(e, env, by) {
   const period = e.ongoing ? `Fra ${fmtD(e.start)}, løbende` : `${fmtD(e.start)} – ${fmtD(e.end)}`;
-  const budget = e.budget ? (e.ongoing ? `${kr(e.budget)} pr. måned` : kr(e.budget)) : 'Ikke angivet';
+  const budget = e.budget ? (e.budgetMonthly ? `${kr(e.budget)} pr. måned` : kr(e.budget)) : 'Ikke angivet';
   const rows = [
     ['Platform', e.platform],
     ['Formål', CATS[e.cat]],

@@ -23,6 +23,13 @@ def d(s): return dt.date.fromisoformat(s)
 
 def parse_rows(text):
     rows = []
+    t = text.strip()
+    if t.startswith('[['):  # ukomprimeret JSON-svar fra Supermetrics: [[header...], [række], ...]
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        for r in json.loads(t):
+            w.writerow(['' if v is None else v for v in r])
+        text = buf.getvalue()
     for line in text.splitlines():
         line = ROW_PREFIX.sub('', line.strip()) if ROW_PREFIX.match(line) else line.strip()
         if not line or line.startswith('Date,') or line.startswith('[') or line.startswith('data:'):

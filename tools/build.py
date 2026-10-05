@@ -79,6 +79,7 @@ def main():
     ap.add_argument('--html', required=True); ap.add_argument('--out', required=True)
     ap.add_argument('--rules', required=True); ap.add_argument('--asof', required=True)
     ap.add_argument('--rows'); ap.add_argument('--from', dest='frm'); ap.add_argument('--to')
+    ap.add_argument('--only-accounts', help='Kommaseparerede kontonavne. Kun disse kontis dage ryddes i intervallet (bruges når datakilden ikke dækker alle konti).')
     a = ap.parse_args()
     html = open(a.html, encoding='utf-8').read()
     m = DATA_RE.search(html)
@@ -94,7 +95,9 @@ def main():
         if not (a.frm and a.to): sys.exit('--from og --to er påkrævet sammen med --rows.')
         rows = parse_rows(open(a.rows, encoding='utf-8').read())
         # ryd hele intervallet, så dage uden forbrug også opdateres
+        only = {x.strip() for x in a.only_accounts.split(',')} if a.only_accounts else None
         for cid in daily:
+            if only is not None and camps.get(cid, {}).get('account') not in only: continue
             for day in [k for k in daily[cid] if a.frm <= k <= a.to]:
                 del daily[cid][day]
         for r in rows:

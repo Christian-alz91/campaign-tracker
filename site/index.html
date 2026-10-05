@@ -1,5 +1,5 @@
 <title>Campaign Tracker</title>
-<meta name="build" content="202610011117">
+<meta name="build" content="202610050827">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&display=swap">
@@ -82,7 +82,7 @@ section{display:grid;gap:14px;min-width:0}
 .bar{position:absolute;top:8px;height:18px;border-radius:4px;background:var(--cc);z-index:2}
 .bar.plan{background:color-mix(in srgb,var(--cc) 14%,transparent);border:1.5px dashed var(--cc)}
 .bar.clip{border-top-left-radius:0;border-bottom-left-radius:0}
-.bar.run::after{content:"";position:absolute;right:-9px;top:3px;border-left:8px solid var(--cc);border-top:6px solid transparent;border-bottom:6px solid transparent}
+.bar.run{border-top-right-radius:0;border-bottom-right-radius:0}
 .bar-lbl{position:absolute;top:8px;font:500 11px/18px var(--f-mono);color:var(--muted);white-space:nowrap;z-index:2;pointer-events:none}
 .bar:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
@@ -326,8 +326,15 @@ function renderGantt(){
         const run = last && i.running && !i.endsToday;
         const days = Math.round((b-a)/DAY);
         const spend = Object.entries(i.daily).filter(([d])=>{const t=toT(d);return t>=a&&t<b;}).reduce((x,[,v])=>x+v,0);
-        const tipHtml = `<b>${esc(i.name)}</b>${fmtD(s[0])} – ${fmtD(s[1])}${clip?' (startede før '+fmtD(D.window.start)+')':''}${run?' · kører fortsat':''}<br>${days} dage · ${kr(spend)}`;
-        bars += `<div class="bar${clip?' clip':''}${run?' run':''}" tabindex="0" data-tip="${esc(tipHtml)}" style="left:${pct(a)}%;width:${Math.max(.35,pct(b)-pct(a))}%"></div>`;
+        // Kørende: bjælken fortsætter til planlagt slutdato – eller hele linjen ud, hvis der ingen slutdato er
+        let end = b, endTxt = '';
+        if(run){
+          const ends = i.campaigns.filter(k=>k.running).map(k=>k.scheduledEnd);
+          if(!ends.length || ends.some(e=>!e)){ end = W1; endTxt = ' · løbende, ingen slutdato'; }
+          else { const last = ends.sort().pop(); end = Math.min(W1, Math.max(b, toT(last)+DAY)); endTxt = ' · planlagt slut '+fmtD(last); }
+        }
+        const tipHtml = `<b>${esc(i.name)}</b>${fmtD(s[0])} – ${fmtD(s[1])}${clip?' (startede før '+fmtD(D.window.start)+')':''}${run?' · kører fortsat'+endTxt:''}<br>${days} dage med tal · ${kr(spend)}`;
+        bars += `<div class="bar${clip?' clip':''}${run&&end>=W1?' run':''}" tabindex="0" data-tip="${esc(tipHtml)}" style="left:${pct(a)}%;width:${Math.max(.35,pct(end)-pct(a))}%"></div>`;
       });
       h += `<div class="g-row" style="--cc:var(--c-${c.id})"><div class="g-label" title="${esc(i.name)}"><span class="nm">${esc(i.name)}</span>${tag}</div><div class="g-track">${bars}</div></div>`;
     });

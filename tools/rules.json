@@ -41,7 +41,8 @@
     {"id": "god-ferie", "name": "God ferie med demens", "cat": "leads"},
     {"id": "moerke-dage", "name": "Mørke dage + Mytequiz", "cat": "leads"},
     {"id": "li26", "name": "Landsindsamling 2026", "cat": "indsamling"},
-    {"id": "testamente", "name": "Testamenteguide", "cat": "arv"}
+    {"id": "testamente", "name": "Testamenteguide", "cat": "arv"},
+    {"id": "arvemoder", "name": "Arvemøder", "cat": "arv"}
   ],
   "byCampaignId": {
     "120248535285640761": "demf-frivillige", "120248922885290761": "demf-frivillige", "120249176014500761": "demf-frivillige",
@@ -70,6 +71,7 @@
     {"nameAny": ["li26"], "initiative": "li26"},
     {"account": "ALZ - Landsindsamling", "yearInitiative": {"idPrefix": "li", "namePrefix": "Landsindsamling ", "cat": "indsamling"}},
     {"account": "ALZ - Demenslinien", "initiative": "demenslinien"},
+    {"nameAny": ["arvemøde"], "initiative": "arvemoder"},
     {"nameAny": ["testamente", "arv"], "initiative": "testamente"},
     {"account": "ALZ - Arv", "initiative": "testamente"}
   ]

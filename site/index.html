@@ -251,11 +251,12 @@ const planEndT = p => p.ongoing ? W1 : toT(p.end)+DAY;
 const periodText = p => p.ongoing ? 'fra '+fmtD(p.start)+' · løbende' : fmtD(p.start)+' – '+fmtD(p.end);
 const budgetText = p => (p.ongoing || p.budgetMonthly) ? kr(p.budget)+' pr. måned' : kr(p.budget);
 const todayISO = () => { const n=new Date(); return new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())).toISOString().slice(0,10); };
+const normName = s => String(s||'').toLowerCase().replace(/[‐-―−]/g,'-').replace(/\s+/g,' ').trim(); // tankestreg og bindestreg tæller ens
 function metaMatch(e){ // en meldt Meta-kampagne, der nu står i de daglige tal, vises kun én gang
   if((e.platform||'Meta')!=='Meta') return false;
-  const n = (e.name||'').trim().toLowerCase(); if(n.length<4) return false;
+  const n = normName(e.name); if(n.length<4) return false;
   const from = toT(e.start) - 3*DAY;
-  return INIT.some(i=>i.campaigns.some(k=>{ const kn=k.name.toLowerCase(); return (kn.includes(n)||n.includes(kn)) && toT(k.first)>=from; }));
+  return INIT.some(i=>i.campaigns.some(k=>{ const kn=normName(k.name); return (kn.includes(n)||n.includes(kn)) && toT(k.first)>=from; }));
 }
 function visibleEntries(){ return entries.filter(e=>!metaMatch(e)); }
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -40,6 +40,8 @@
     {"id": "demenspanelet", "name": "Demenspanelet", "cat": "deltagere"},
     {"id": "god-ferie", "name": "God ferie med demens", "cat": "leads"},
     {"id": "moerke-dage", "name": "Mørke dage + Mytequiz", "cat": "leads"},
+    {"id": "opskrifthaefte", "name": "Opskrifthæfte", "cat": "leads"},
+    {"id": "julekalender", "name": "Julekalender 2026", "cat": "leads"},
     {"id": "li26", "name": "Landsindsamling 2026", "cat": "indsamling"},
     {"id": "testamente", "name": "Testamenteguide", "cat": "arv"},
     {"id": "arvemoder", "name": "Arvemøder", "cat": "arv"}
@@ -68,6 +70,8 @@
     {"nameAny": ["demenslinj", "demenslini"], "initiative": "demenslinien"},
     {"nameAny": ["god ferie"], "initiative": "god-ferie"},
     {"nameAny": ["mørke dage", "mytequiz"], "initiative": "moerke-dage"},
+    {"nameAny": ["opskrift"], "initiative": "opskrifthaefte"},
+    {"nameAny": ["julekalender"], "initiative": "julekalender"},
     {"nameAny": ["li26"], "initiative": "li26"},
     {"account": "ALZ - Landsindsamling", "yearInitiative": {"idPrefix": "li", "namePrefix": "Landsindsamling ", "cat": "indsamling"}},
     {"account": "ALZ - Demenslinien", "initiative": "demenslinien"},
